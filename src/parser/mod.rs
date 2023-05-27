@@ -211,7 +211,7 @@ mod tests {
                     'K',
                     Some(TeleinfoDate {
                         season: 'H',
-                        date: Local.ymd(2020, 2, 13).and_hms(8, 51, 18),
+                        date: Local.with_ymd_and_hms(2020, 2, 13, 8, 51, 18).unwrap(),
                         raw_value: "H200213085118".to_string()
                     })
                 )
@@ -255,7 +255,7 @@ mod tests {
         let expect = vec![
              ("ADSC", "041776199277", 'I', None),
              ("VTIC", "02", 'J', None),
-             ("DATE", "", ';', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(23,08,04), raw_value: "H200214230804".to_string() })),
+             ("DATE", "", ';', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,23,08,04).unwrap(), raw_value: "H200214230804".to_string() })),
              ("NGTF", "     TEMPO      ", 'F', None),
              ("LTARF", "   HC  BLANC    ", '6', None),
              ("EAST", "021849106", '.', None),
@@ -285,22 +285,22 @@ mod tests {
              ("SINSTS1", "00664", 'G', None),
              ("SINSTS2", "01373", 'F', None),
              ("SINSTS3", "00664", 'I', None),
-             ("SMAXSN", "10802", '7', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(17,51,35), raw_value: "H200214175135".to_string() })),
-             ("SMAXSN1", "03411", '&', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(17,51,35), raw_value: "H200214175135".to_string() })),
-             ("SMAXSN2", "03899", ';', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(17,51,35), raw_value: "H200214175135".to_string() })),
-             ("SMAXSN3", "03512", '*', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(17,51,35), raw_value: "H200214175135".to_string() })),
-             ("SMAXSN-1", "09562", ' ', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,13).and_hms(08,51,18), raw_value: "H200213085118".to_string() })),
-             ("SMAXSN1-1", "03129", 'J', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,13).and_hms(08,51,18), raw_value: "H200213085118".to_string() })),
-             ("SMAXSN2-1", "03366", '@', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,13).and_hms(10,11,42), raw_value: "H200213101142".to_string() })),
-             ("SMAXSN3-1", "03191", 'K', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,13).and_hms(08,51,18), raw_value: "H200213085118".to_string() })),
-             ("CCASN", "01650", '5', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(23,00,00), raw_value: "H200214230000".to_string() })),
-             ("CCASN-1", "00786", ' ', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(22,50,00), raw_value: "H200214225000".to_string() })),
-             ("UMOY1", "237", '(', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(23,00,00), raw_value: "H200214230000".to_string() })),
-             ("UMOY2", "238", '*', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(23,00,00), raw_value: "H200214230000".to_string() })),
-             ("UMOY3", "236", ')', Some(TeleinfoDate { season: 'H', date: Local.ymd(2020,02,14).and_hms(23,00,00), raw_value: "H200214230000".to_string() })),
+             ("SMAXSN", "10802", '7', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,17,51,35).unwrap(), raw_value: "H200214175135".to_string() })),
+             ("SMAXSN1", "03411", '&', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,17,51,35).unwrap(), raw_value: "H200214175135".to_string() })),
+             ("SMAXSN2", "03899", ';', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,17,51,35).unwrap(), raw_value: "H200214175135".to_string() })),
+             ("SMAXSN3", "03512", '*', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,17,51,35).unwrap(), raw_value: "H200214175135".to_string() })),
+             ("SMAXSN-1", "09562", ' ', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,13,08,51,18).unwrap(), raw_value: "H200213085118".to_string() })),
+             ("SMAXSN1-1", "03129", 'J', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,13,08,51,18).unwrap(), raw_value: "H200213085118".to_string() })),
+             ("SMAXSN2-1", "03366", '@', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,13,10,11,42).unwrap(), raw_value: "H200213101142".to_string() })),
+             ("SMAXSN3-1", "03191", 'K', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,13,08,51,18).unwrap(), raw_value: "H200213085118".to_string() })),
+             ("CCASN", "01650", '5', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,23,00,00).unwrap(), raw_value: "H200214230000".to_string() })),
+             ("CCASN-1", "00786", ' ', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,22,50,00).unwrap(), raw_value: "H200214225000".to_string() })),
+             ("UMOY1", "237", '(', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,23,00,00).unwrap(), raw_value: "H200214230000".to_string() })),
+             ("UMOY2", "238", '*', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,23,00,00).unwrap(), raw_value: "H200214230000".to_string() })),
+             ("UMOY3", "236", ')', Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020,02,14,23,00,00).unwrap(), raw_value: "H200214230000".to_string() })),
              ("STGE", "463A0800", 'K', None),
-             ("DPM1", "00", '\\', Some(TeleinfoDate { season: ' ', date: Local.ymd(2020,02,14).and_hms(06,00,00), raw_value: " 200214060000".to_string() })),
-             ("FPM1", "00", '_', Some(TeleinfoDate { season: ' ', date: Local.ymd(2020,02,15).and_hms(06,00,00), raw_value: " 200215060000".to_string() })),
+             ("DPM1", "00", '\\', Some(TeleinfoDate { season: ' ', date: Local.with_ymd_and_hms(2020,02,14,06,00,00).unwrap(), raw_value: " 200214060000".to_string() })),
+             ("FPM1", "00", '_', Some(TeleinfoDate { season: ' ', date: Local.with_ymd_and_hms(2020,02,15,06,00,00).unwrap(), raw_value: " 200215060000".to_string() })),
              ("MSG1", "PAS DE          MESSAGE         ", '<', None),
              ("PRM", "07361794479930", 'F', None),
              ("RELAIS", "001", 'C', None),
@@ -316,18 +316,22 @@ mod tests {
     }
     #[test]
     fn test_cs() {
-        assert!(
-            validate(TeleinfoMode::Legacy, &("BBRHCJB", "001478389", 'E', None))
-        );
-        assert!(
-            !validate(TeleinfoMode::Legacy, &("BBRHCJB", "001478389", 'F', None))
-        );
-        assert!(
-            validate(TeleinfoMode::Standard, &("EASF01", "004855593", 'I', None),)
-        );
-        assert!(
-            !validate(TeleinfoMode::Standard, &("EASF01", "004855593", 'J', None),)
-        );
+        assert!(validate(
+            TeleinfoMode::Legacy,
+            &("BBRHCJB", "001478389", 'E', None)
+        ));
+        assert!(!validate(
+            TeleinfoMode::Legacy,
+            &("BBRHCJB", "001478389", 'F', None)
+        ));
+        assert!(validate(
+            TeleinfoMode::Standard,
+            &("EASF01", "004855593", 'I', None),
+        ));
+        assert!(!validate(
+            TeleinfoMode::Standard,
+            &("EASF01", "004855593", 'J', None),
+        ));
     }
     #[test]
     fn test_standard_dataset() {
@@ -344,7 +348,7 @@ mod tests {
     fn test_horodate() {
         let expected = TeleinfoDate {
             season: 'H',
-            date: Local.ymd(2008, 12, 25).and_hms(22, 35, 18),
+            date: Local.with_ymd_and_hms(2008, 12, 25, 22, 35, 18).unwrap(),
             raw_value: "H081225223518".to_string(),
         };
         let expected2 = expected.clone();
@@ -378,7 +382,7 @@ mod tests {
         let expect_standard = vec![
             ("ADSC","041776199277",'I',None),
             ("VTIC","02",'J',None),
-            ("DATE","",';',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 8, 4), raw_value: "H200214230804".to_string() })),
+            ("DATE","",';',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 8, 4).unwrap(), raw_value: "H200214230804".to_string() })),
             ("NGTF","     TEMPO      ",'F',None),
             ("LTARF","   HC  BLANC    ",'6',None),
             ("EAST","021849106",'.',None),
@@ -408,22 +412,22 @@ mod tests {
             ("SINSTS1","00664",'G',None),
             ("SINSTS2","01373",'F',None),
             ("SINSTS3","00664",'I',None),
-            ("SMAXSN","10802",'7',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(17, 51, 35), raw_value: "H200214175135".to_string() })),
-            ("SMAXSN1","03411",'&',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(17, 51, 35), raw_value: "H200214175135".to_string() })),
-            ("SMAXSN2","03899",';',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(17, 51, 35), raw_value: "H200214175135".to_string() })),
-            ("SMAXSN3","03512",'*',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(17, 51, 35), raw_value: "H200214175135".to_string() })),
-            ("SMAXSN-1","09562",' ',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 13).and_hms(8, 51, 18), raw_value: "H200213085118".to_string() })),
-            ("SMAXSN1-1","03129",'J',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 13).and_hms(8, 51, 18), raw_value: "H200213085118".to_string() })),
-            ("SMAXSN2-1","03366",'@',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 13).and_hms(10, 11, 42), raw_value: "H200213101142".to_string() })),
-            ("SMAXSN3-1","03191",'K',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 13).and_hms(8, 51, 18), raw_value: "H200213085118".to_string() })), 
-            ("CCASN","01650",'5',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 0, 0), raw_value: "H200214230000".to_string() })),
-            ("CCASN-1","00786",' ',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(22, 50, 0), raw_value: "H200214225000".to_string() })),
-            ("UMOY1","237",'(',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 0, 0), raw_value: "H200214230000".to_string() })),
-            ("UMOY2","238",'*',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 0, 0), raw_value: "H200214230000".to_string() })),
-            ("UMOY3","236",')',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 0, 0), raw_value: "H200214230000".to_string() })),
+            ("SMAXSN","10802",'7',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN1","03411",'&',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN2","03899",';',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN3","03512",'*',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN-1","09562",' ',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,8, 51, 18).unwrap(), raw_value: "H200213085118".to_string() })),
+            ("SMAXSN1-1","03129",'J',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,8, 51, 18).unwrap(), raw_value: "H200213085118".to_string() })),
+            ("SMAXSN2-1","03366",'@',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,10, 11, 42).unwrap(), raw_value: "H200213101142".to_string() })),
+            ("SMAXSN3-1","03191",'K',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,8, 51, 18).unwrap(), raw_value: "H200213085118".to_string() })), 
+            ("CCASN","01650",'5',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("CCASN-1","00786",' ',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,22, 50, 0).unwrap(), raw_value: "H200214225000".to_string() })),
+            ("UMOY1","237",'(',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("UMOY2","238",'*',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("UMOY3","236",')',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
             ("STGE","463A0800",'K',None),
-            ("DPM1","00",'\\',Some(TeleinfoDate { season: ' ', date: Local.ymd(2020, 2, 14).and_hms(6, 0, 0), raw_value: " 200214060000".to_string() })),
-            ("FPM1","00",'_',Some(TeleinfoDate { season: ' ', date: Local.ymd(2020, 2, 15).and_hms(6, 0, 0), raw_value: " 200215060000".to_string() })),
+            ("DPM1","00",'\\',Some(TeleinfoDate { season: ' ', date: Local.with_ymd_and_hms(2020, 2, 14,6, 0, 0).unwrap(), raw_value: " 200214060000".to_string() })),
+            ("FPM1","00",'_',Some(TeleinfoDate { season: ' ', date: Local.with_ymd_and_hms(2020, 2, 15,6, 0, 0).unwrap(), raw_value: " 200215060000".to_string() })),
             ("MSG1","PAS DE          MESSAGE         ",'<',None),
             ("PRM","07361794479930",'F',None),
             ("RELAIS","001",'C',None),
