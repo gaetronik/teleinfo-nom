@@ -275,7 +275,12 @@ impl TeleinfoMessage {
     ///            ]);
     pub fn get_values(&self, keys: Vec<String>) -> Vec<(String, Option<String>)> {
         keys.into_iter()
-            .map(|idx| (idx.clone(), get_value_from_teleinfovalue(self.get_value(idx))))
+            .map(|idx| {
+                (
+                    idx.clone(),
+                    get_value_from_teleinfovalue(self.get_value(idx)),
+                )
+            })
             .collect()
     }
 }
@@ -283,10 +288,7 @@ impl TeleinfoMessage {
 pub mod parser;
 
 fn get_value_from_teleinfovalue(value: Option<&TeleinfoValue>) -> Option<String> {
-    match value {
-        Some(x) => Some(x.value.clone()),
-        None => None,
-    }
+    value.map(|x| x.value.clone())
 }
 
 fn parsed_vector_to_values(lines: Vec<TeleinfoTuple>) -> HashMap<String, TeleinfoValue> {
@@ -372,7 +374,7 @@ pub fn get_message_buf<T: Read>(
     leftover: String,
 ) -> Result<(String, TeleinfoMessage)> {
     let mut source = BufReader::with_capacity(128, source);
-    let mut leftover = leftover.clone();
+    let mut leftover = leftover;
     loop {
         source.read_line(&mut leftover).expect("Oops failed");
         match parser::get_message(&leftover) {

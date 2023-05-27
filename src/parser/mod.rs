@@ -177,7 +177,7 @@ fn calculate_checksum(input: &str) -> char {
     ((input
         .to_string()
         .chars()
-        .fold(0 as u32, |acc, c| acc + (c as u32))
+        .fold(0_u32, |acc, c| acc + (c as u32))
         & 0x3F) as u8
         + 0x20) as char
 }
@@ -316,21 +316,17 @@ mod tests {
     }
     #[test]
     fn test_cs() {
-        assert_eq!(
-            validate(TeleinfoMode::Legacy, &("BBRHCJB", "001478389", 'E', None)),
-            true
+        assert!(
+            validate(TeleinfoMode::Legacy, &("BBRHCJB", "001478389", 'E', None))
         );
-        assert_eq!(
-            validate(TeleinfoMode::Legacy, &("BBRHCJB", "001478389", 'F', None)),
-            false
+        assert!(
+            !validate(TeleinfoMode::Legacy, &("BBRHCJB", "001478389", 'F', None))
         );
-        assert_eq!(
-            validate(TeleinfoMode::Standard, &("EASF01", "004855593", 'I', None),),
-            true
+        assert!(
+            validate(TeleinfoMode::Standard, &("EASF01", "004855593", 'I', None),)
         );
-        assert_eq!(
-            validate(TeleinfoMode::Standard, &("EASF01", "004855593", 'J', None),),
-            false
+        assert!(
+            !validate(TeleinfoMode::Standard, &("EASF01", "004855593", 'J', None),)
         );
     }
     #[test]
