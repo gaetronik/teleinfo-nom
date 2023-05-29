@@ -1,5 +1,5 @@
 # teleinfo\_nom: a wannabe comprehensive teleinfo parser in nom
-[![Build Status](https://travis-ci.org/gaetronik/teleinfo-nom.svg)](https://travis-ci.org/gaetronik/teleinfo-nom)
+[![Build Status](https://github.com/gaetronik/teleinfo-nom/actions/workflows/rust.yml/badge.svg?branch=master)]
 [![Crates.io](https://img.shields.io/crates/v/teleinfo-nom.svg)](https://crates.io/crates/teleinfo-nom)
 
 
@@ -27,7 +27,7 @@ use std::fs::File;
 extern crate teleinfo_nom;
 // Could be a serial port with serialport crate
 let mut stream = File::open("assets/stream_standard_raw.txt").unwrap();
-let (remain, msg1) = teleinfo_nom::get_message(&mut stream, "".to_string()).unwrap();
+let (remain, msg1) = teleinfo_nom::get_message_buf(&mut stream, "".to_string()).unwrap();
 let current_indices = msg1.get_billing_indices();
 let current_values = msg1.get_values(current_indices);
 for (index,value) in current_values.into_iter() {
