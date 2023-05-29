@@ -6,7 +6,7 @@ extern crate nom;
 
 use chrono::{offset::Local, DateTime};
 use std::collections::HashMap;
-use std::io::{self, Error, ErrorKind, Read, Result};
+use std::io::{self, BufRead, BufReader, Error, ErrorKind, Read, Result};
 
 type TeleinfoTuple<'a> = (&'a str, &'a str, char, Option<TeleinfoDate>);
 
@@ -275,7 +275,12 @@ impl TeleinfoMessage {
     ///            ]);
     pub fn get_values(&self, keys: Vec<String>) -> Vec<(String, Option<String>)> {
         keys.into_iter()
-            .map(|idx| (idx.clone(), get_value_from_teleinfovalue(self.get_value(idx))))
+            .map(|idx| {
+                (
+                    idx.clone(),
+                    get_value_from_teleinfovalue(self.get_value(idx)),
+                )
+            })
             .collect()
     }
 }
@@ -283,10 +288,7 @@ impl TeleinfoMessage {
 pub mod parser;
 
 fn get_value_from_teleinfovalue(value: Option<&TeleinfoValue>) -> Option<String> {
-    match value {
-        Some(x) => Some(x.value.clone()),
-        None => None,
-    }
+    value.map(|x| x.value.clone())
 }
 
 fn parsed_vector_to_values(lines: Vec<TeleinfoTuple>) -> HashMap<String, TeleinfoValue> {
@@ -357,9 +359,40 @@ fn handle_nom_error() -> Result<(String, TeleinfoMessage)> {
     Err(Error::new(ErrorKind::InvalidData, "Parse Error"))
 }
 
+/// Read message from an readable object `source` bufferized, with `leftover` being the unparsed string
+/// from a previous call
+/// Returns a tuple with data to be parsed in a next call string as `leftover` and the first found TeleinfoMessage
+/// # Example
+/// ```
+/// use std::fs::File;
+/// // Could be a serial port with serialport crate
+/// let mut stream = File::open("assets/stream_standard_raw.txt").unwrap();
+/// let (remain, msg1) = teleinfo_nom::get_message_buf(&mut stream, "".to_string()).unwrap();
+/// ```
+pub fn get_message_buf<T: Read>(
+    source: &mut T,
+    leftover: String,
+) -> Result<(String, TeleinfoMessage)> {
+    let mut source = BufReader::with_capacity(128, source);
+    let mut leftover = leftover;
+    loop {
+        source.read_line(&mut leftover).expect("Oops failed");
+        match parser::get_message(&leftover) {
+            Ok((r, message)) => {
+                let result = build_message(message).unwrap();
+                let mut remain = r.to_string();
+                remain.push_str(&String::from_utf8_lossy(source.buffer()));
+                return Ok((remain, result));
+            }
+            Err(nom::Err::Incomplete(_)) => (),
+            Err(_) => return handle_nom_error(),
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use crate::get_message;
+    use crate::get_message_buf;
     use crate::parsed_vector_to_values;
     use crate::TeleinfoDate;
     use crate::TeleinfoMessage;
@@ -372,7 +405,7 @@ mod tests {
         let expect_values = vec![
             ("ADSC","041776199277",'I',None),
             ("VTIC","02",'J',None),
-            ("DATE","",';',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 8, 4), raw_value: "H200214230804".to_string() })),
+            ("DATE","",';',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 8, 4).unwrap(), raw_value: "H200214230804".to_string() })),
             ("NGTF","     TEMPO      ",'F',None),
             ("LTARF","   HC  BLANC    ",'6',None),
             ("EAST","021849106",'.',None),
@@ -402,22 +435,22 @@ mod tests {
             ("SINSTS1","00664",'G',None),
             ("SINSTS2","01373",'F',None),
             ("SINSTS3","00664",'I',None),
-            ("SMAXSN","10802",'7',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(17, 51, 35), raw_value: "H200214175135".to_string() })),
-            ("SMAXSN1","03411",'&',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(17, 51, 35), raw_value: "H200214175135".to_string() })),
-            ("SMAXSN2","03899",';',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(17, 51, 35), raw_value: "H200214175135".to_string() })),
-            ("SMAXSN3","03512",'*',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(17, 51, 35), raw_value: "H200214175135".to_string() })),
-            ("SMAXSN-1","09562",' ',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 13).and_hms(8, 51, 18), raw_value: "H200213085118".to_string() })),
-            ("SMAXSN1-1","03129",'J',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 13).and_hms(8, 51, 18), raw_value: "H200213085118".to_string() })),
-            ("SMAXSN2-1","03366",'@',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 13).and_hms(10, 11, 42), raw_value: "H200213101142".to_string() })),
-            ("SMAXSN3-1","03191",'K',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 13).and_hms(8, 51, 18), raw_value: "H200213085118".to_string() })), 
-            ("CCASN","01650",'5',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 0, 0), raw_value: "H200214230000".to_string() })),
-            ("CCASN-1","00786",' ',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(22, 50, 0), raw_value: "H200214225000".to_string() })),
-            ("UMOY1","237",'(',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 0, 0), raw_value: "H200214230000".to_string() })),
-            ("UMOY2","238",'*',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 0, 0), raw_value: "H200214230000".to_string() })),
-            ("UMOY3","236",')',Some(TeleinfoDate { season: 'H', date: Local.ymd(2020, 2, 14).and_hms(23, 0, 0), raw_value: "H200214230000".to_string() })),
+            ("SMAXSN","10802",'7',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN1","03411",'&',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN2","03899",';',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN3","03512",'*',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN-1","09562",' ',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,8, 51, 18).unwrap(), raw_value: "H200213085118".to_string() })),
+            ("SMAXSN1-1","03129",'J',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,8, 51, 18).unwrap(), raw_value: "H200213085118".to_string() })),
+            ("SMAXSN2-1","03366",'@',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,10, 11, 42).unwrap(), raw_value: "H200213101142".to_string() })),
+            ("SMAXSN3-1","03191",'K',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,8, 51, 18).unwrap(), raw_value: "H200213085118".to_string() })), 
+            ("CCASN","01650",'5',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("CCASN-1","00786",' ',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,22, 50, 0).unwrap(), raw_value: "H200214225000".to_string() })),
+            ("UMOY1","237",'(',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("UMOY2","238",'*',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("UMOY3","236",')',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
             ("STGE","463A0800",'K',None),
-            ("DPM1","00",'\\',Some(TeleinfoDate { season: ' ', date: Local.ymd(2020, 2, 14).and_hms(6, 0, 0), raw_value: " 200214060000".to_string() })),
-            ("FPM1","00",'_',Some(TeleinfoDate { season: ' ', date: Local.ymd(2020, 2, 15).and_hms(6, 0, 0), raw_value: " 200215060000".to_string() })),
+            ("DPM1","00",'\\',Some(TeleinfoDate { season: ' ', date: Local.with_ymd_and_hms(2020, 2, 14,6, 0, 0).unwrap(), raw_value: " 200214060000".to_string() })),
+            ("FPM1","00",'_',Some(TeleinfoDate { season: ' ', date: Local.with_ymd_and_hms(2020, 2, 15,6, 0, 0).unwrap(), raw_value: " 200215060000".to_string() })),
             ("MSG1","PAS DE          MESSAGE         ",'<',None),
             ("PRM","07361794479930",'F',None),
             ("RELAIS","001",'C',None),
@@ -439,7 +472,7 @@ mod tests {
                 '=',
                 Some(TeleinfoDate {
                     season: 'H',
-                    date: Local.ymd(2020, 2, 14).and_hms(23, 8, 6),
+                    date: Local.with_ymd_and_hms(2020, 2, 14, 23, 8, 6).unwrap(),
                     raw_value: "H200214230806".to_string(),
                 }),
             ),
@@ -468,5 +501,106 @@ mod tests {
         let (remain2, result2) = get_message(&mut stream, remain).unwrap();
         assert_eq!( (remain2,result2) ,
  ("\u{2}\nADSC\t041776199277\tI\r\nVTIC\t02\tJ\r\nDATE\tH200214230807\t\t>\r\nNGTF\t     TEMPO      \tF\r\nLTARF\t   H".to_string(),expect_inc));
+    }
+    #[test]
+    fn test_get_message_buf() {
+        let mut stream = File::open("assets/stream_standard_raw.txt").unwrap();
+        let expect_values = vec![
+            ("ADSC","041776199277",'I',None),
+            ("VTIC","02",'J',None),
+            ("DATE","",';',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 8, 4).unwrap(), raw_value: "H200214230804".to_string() })),
+            ("NGTF","     TEMPO      ",'F',None),
+            ("LTARF","   HC  BLANC    ",'6',None),
+            ("EAST","021849106",'.',None),
+            ("EASF01","004855593",'I',None),
+            ("EASF02","014090959",'H',None),
+            ("EASF03","000487131",'<',None),
+            ("EASF04","001481464",'A',None),
+            ("EASF05","000227596",'E',None),
+            ("EASF06","000706363",'@',None),
+            ("EASF07","000000000",'(',None),
+            ("EASF08","000000000",')',None),
+            ("EASF09","000000000",'*',None),
+            ("EASF10","000000000",'"',None),
+            ("EASD01","021849106",'?',None),
+            ("EASD02","000000000",'!',None),
+            ("EASD03","000000000",'"',None),
+            ("EASD04","000000000",'#',None),
+            ("IRMS1","003",'1',None),
+            ("IRMS2","006",'5',None),
+            ("IRMS3","003",'3',None),
+            ("URMS1","237",'F',None),
+            ("URMS2","238",'H',None),
+            ("URMS3","235",'F',None),
+            ("PREF","30",'B',None),
+            ("PCOUP","30",'\\',None),
+            ("SINSTS","02700",'O',None),
+            ("SINSTS1","00664",'G',None),
+            ("SINSTS2","01373",'F',None),
+            ("SINSTS3","00664",'I',None),
+            ("SMAXSN","10802",'7',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN1","03411",'&',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN2","03899",';',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN3","03512",'*',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,17, 51, 35).unwrap(), raw_value: "H200214175135".to_string() })),
+            ("SMAXSN-1","09562",' ',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,8, 51, 18).unwrap(), raw_value: "H200213085118".to_string() })),
+            ("SMAXSN1-1","03129",'J',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,8, 51, 18).unwrap(), raw_value: "H200213085118".to_string() })),
+            ("SMAXSN2-1","03366",'@',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,10, 11, 42).unwrap(), raw_value: "H200213101142".to_string() })),
+            ("SMAXSN3-1","03191",'K',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 13,8, 51, 18).unwrap(), raw_value: "H200213085118".to_string() })), 
+            ("CCASN","01650",'5',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("CCASN-1","00786",' ',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,22, 50, 0).unwrap(), raw_value: "H200214225000".to_string() })),
+            ("UMOY1","237",'(',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("UMOY2","238",'*',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("UMOY3","236",')',Some(TeleinfoDate { season: 'H', date: Local.with_ymd_and_hms(2020, 2, 14,23, 0, 0).unwrap(), raw_value: "H200214230000".to_string() })),
+            ("STGE","463A0800",'K',None),
+            ("DPM1","00",'\\',Some(TeleinfoDate { season: ' ', date: Local.with_ymd_and_hms(2020, 2, 14,6, 0, 0).unwrap(), raw_value: " 200214060000".to_string() })),
+            ("FPM1","00",'_',Some(TeleinfoDate { season: ' ', date: Local.with_ymd_and_hms(2020, 2, 15,6, 0, 0).unwrap(), raw_value: " 200215060000".to_string() })),
+            ("MSG1","PAS DE          MESSAGE         ",'<',None),
+            ("PRM","07361794479930",'F',None),
+            ("RELAIS","001",'C',None),
+            ("NTARF","03",'P',None),
+            ("NJOURF","00",'&',None),
+            ("NJOURF+1","00",'B',None),
+            ("PJOURF+1","00004001 06004002 22004001 NONUTILE NONUTILE NONUTILE NONUTILE NONUTILE NONUTILE NONUTILE NONUTILE",'.',None)];
+        let expect = TeleinfoMessage {
+            values: parsed_vector_to_values(expect_values),
+            mode: TeleinfoMode::Standard,
+            valid: true,
+        };
+        let expect_values_inc = vec![
+            ("ADSC", "041776199277", 'I', None),
+            ("VTIC", "02", 'J', None),
+            (
+                "DATE",
+                "",
+                '=',
+                Some(TeleinfoDate {
+                    season: 'H',
+                    date: Local.with_ymd_and_hms(2020, 2, 14, 23, 8, 6).unwrap(),
+                    raw_value: "H200214230806".to_string(),
+                }),
+            ),
+            ("NGTF", "     TEMPO      ", 'F', None),
+            ("LTARF", "   HC  BLANC    ", '6', None),
+            ("EAST", "021849107", '/', None),
+            ("EASF01", "004855593", 'I', None),
+            ("EASF02", "014090959", 'H', None),
+            ("EASF03", "000487132", '=', None),
+            ("EASF04", "001481464", 'A', None),
+            ("EASF05", "000227596", 'E', None),
+            ("EASF06", "000706363", '@', None),
+            ("EASF07", "000000000", '(', None),
+            ("EASF08", "000000000", ')', None),
+            ("EASF09", "000000000", '*', None),
+            ("EASF10", "000000000", '"', None),
+        ];
+        let expect_inc = TeleinfoMessage {
+            values: parsed_vector_to_values(expect_values_inc),
+            mode: TeleinfoMode::Standard,
+            valid: false,
+        };
+        let (remain, result) = get_message_buf(&mut stream, "".to_string()).unwrap();
+        assert_eq!((remain.clone(), result), ("\u{2}\nADSC\t041776199277\tI\r\nVTIC\t02\tJ\r\nDATE\tH200214230806\t\t=\r\nNGTF\t     TEMPO      \tF\r\nLTARF\t   HC  BLANC    \t6\r\nEAST\t021".to_string(), expect));
+        let (remain2, result2) = get_message_buf(&mut stream, remain).unwrap();
+        assert_eq!((remain2, result2), ("\u{2}\nAD".to_string(), expect_inc));
     }
 }
