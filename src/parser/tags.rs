@@ -1,4 +1,4 @@
-use nom::{branch::alt, bytes::complete::tag, IResult};
+use nom::{branch::alt, bytes::complete::tag, IResult, Parser};
 
 fn parser_tag_legacy_1(input: &str) -> IResult<&str, &str> {
     alt((
@@ -22,7 +22,8 @@ fn parser_tag_legacy_1(input: &str) -> IResult<&str, &str> {
         tag("HHPHC"),
         tag("MOTDETAT"),
         tag("PPOT"),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parser_tag_legacy_2(input: &str) -> IResult<&str, &str> {
@@ -38,11 +39,12 @@ fn parser_tag_legacy_2(input: &str) -> IResult<&str, &str> {
         tag("BBRHPJW"),
         tag("BBRHCJR"),
         tag("BBRHPJR"),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parser_tag_legacy_3(input: &str) -> IResult<&str, &str> {
-    alt((tag("ADIR1"), tag("ADIR2"), tag("ADIR3")))(input)
+    alt((tag("ADIR1"), tag("ADIR2"), tag("ADIR3"))).parse(input)
 }
 
 pub fn parser_tag_legacy(input: &str) -> IResult<&str, &str> {
@@ -50,7 +52,8 @@ pub fn parser_tag_legacy(input: &str) -> IResult<&str, &str> {
         parser_tag_legacy_1,
         parser_tag_legacy_2,
         parser_tag_legacy_3,
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parser_tag_standard_1(input: &str) -> IResult<&str, &str> {
@@ -75,7 +78,8 @@ fn parser_tag_standard_1(input: &str) -> IResult<&str, &str> {
         tag("EASD03"),
         tag("EASD04"),
         tag("EAIT"),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parser_tag_standard_2(input: &str) -> IResult<&str, &str> {
@@ -101,7 +105,8 @@ fn parser_tag_standard_2(input: &str) -> IResult<&str, &str> {
         tag("STGE"),
         tag("MSG1"),
         tag("MSG2"),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parser_tag_standard_3(input: &str) -> IResult<&str, &str> {
@@ -114,7 +119,8 @@ fn parser_tag_standard_3(input: &str) -> IResult<&str, &str> {
         tag("NJOURF"),
         tag("PJOURF+1"),
         tag("PPOINTE"),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 pub fn parser_tag_standard(input: &str) -> IResult<&str, &str> {
@@ -122,7 +128,8 @@ pub fn parser_tag_standard(input: &str) -> IResult<&str, &str> {
         parser_tag_standard_1,
         parser_tag_standard_2,
         parser_tag_standard_3,
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parser_tag_standard_horodate_1(input: &str) -> IResult<&str, &str> {
@@ -148,16 +155,18 @@ fn parser_tag_standard_horodate_1(input: &str) -> IResult<&str, &str> {
         tag("DPM1"),
         tag("FPM1"),
         tag("DPM2"),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parser_tag_standard_horodate_2(input: &str) -> IResult<&str, &str> {
-    alt((tag("FPM2"), tag("DPM3"), tag("FPM3")))(input)
+    alt((tag("FPM2"), tag("DPM3"), tag("FPM3"))).parse(input)
 }
 
 pub fn parser_tag_standard_horodate(input: &str) -> IResult<&str, &str> {
     alt((
         parser_tag_standard_horodate_1,
         parser_tag_standard_horodate_2,
-    ))(input)
+    ))
+    .parse(input)
 }
