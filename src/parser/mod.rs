@@ -2,8 +2,7 @@ use nom::{
     branch::alt, bytes::complete::tag, bytes::complete::tag_no_case, bytes::complete::take,
     bytes::complete::take_until, bytes::streaming::take_until as stream_take_until,
     character::complete::anychar, character::complete::char, character::complete::digit1,
-    combinator::recognize, combinator::verify, multi::many1, sequence::delimited, sequence::tuple,
-    IResult,
+    combinator::recognize, combinator::verify, multi::many1, sequence::delimited, IResult, Parser,
 };
 
 use crate::parser::tags::*;
@@ -13,11 +12,11 @@ use chrono::{Local, TimeZone};
 mod tags;
 
 fn get_beginning(input: &str) -> IResult<&str, &str> {
-    recognize(tuple((stream_take_until("\u{02}"), tag("\u{02}"))))(input)
+    recognize((stream_take_until("\u{02}"), tag("\u{02}"))).parse(input)
 }
 
 pub fn get_message(input: &str) -> IResult<&str, &str> {
-    delimited(get_beginning, stream_take_until("\u{03}"), tag("\u{03}"))(input)
+    delimited(get_beginning, stream_take_until("\u{03}"), tag("\u{03}")).parse(input)
 }
 
 fn separator(mode: TeleinfoMode) -> char {
@@ -36,12 +35,12 @@ fn parser_value_standard(input: &str) -> IResult<&str, &str> {
 }
 
 fn parser_value_helper(input: &str, mode: TeleinfoMode) -> IResult<&str, &str> {
-    take_until(&(separator(mode).to_string()) as &str)(input)
+    take_until(&(separator(mode).to_string()) as &str).parse(input)
 }
 
-fn parser_dataset_legacy(input: &str) -> IResult<&str, TeleinfoTuple> {
+fn parser_dataset_legacy(input: &str) -> IResult<&str, TeleinfoTuple<'_>> {
     let mode = TeleinfoMode::Legacy;
-    let (input, (_, tag, _, data, _, checksum, _)) = tuple((
+    let (input, (_, tag, _, data, _, checksum, _)) = (
         char('\u{0a}'),
         parser_tag_legacy,
         char(separator(mode)),
@@ -49,19 +48,21 @@ fn parser_dataset_legacy(input: &str) -> IResult<&str, TeleinfoTuple> {
         char(separator(mode)),
         anychar,
         char('\u{0d}'),
-    ))(input)?;
+    )
+        .parse(input)?;
     Ok((input, (tag, data, checksum, None)))
 }
 
-fn parser_dataset_standard(input: &str) -> IResult<&str, TeleinfoTuple> {
+fn parser_dataset_standard(input: &str) -> IResult<&str, TeleinfoTuple<'_>> {
     alt((
         parser_dataset_standard_nohd,
         parser_dataset_standard_horodate,
-    ))(input)
+    ))
+    .parse(input)
 }
-fn parser_dataset_standard_nohd(input: &str) -> IResult<&str, TeleinfoTuple> {
+fn parser_dataset_standard_nohd(input: &str) -> IResult<&str, TeleinfoTuple<'_>> {
     let mode = TeleinfoMode::Standard;
-    let (input, (_, tag, _, data, _, checksum, _)) = tuple((
+    let (input, (_, tag, _, data, _, checksum, _)) = (
         char('\u{0a}'),
         parser_tag_standard,
         char(separator(mode)),
@@ -69,13 +70,14 @@ fn parser_dataset_standard_nohd(input: &str) -> IResult<&str, TeleinfoTuple> {
         char(separator(mode)),
         anychar,
         char('\u{0d}'),
-    ))(input)?;
+    )
+        .parse(input)?;
     Ok((input, (tag, data, checksum, None)))
 }
 
-fn parser_dataset_standard_horodate(input: &str) -> IResult<&str, TeleinfoTuple> {
+fn parser_dataset_standard_horodate(input: &str) -> IResult<&str, TeleinfoTuple<'_>> {
     let mode = TeleinfoMode::Standard;
-    let (input, (_, tag, _, date, _, data, _, checksum, _)) = tuple((
+    let (input, (_, tag, _, date, _, data, _, checksum, _)) = (
         char('\u{0a}'),
         parser_tag_standard_horodate,
         char(separator(mode)),
@@ -85,12 +87,13 @@ fn parser_dataset_standard_horodate(input: &str) -> IResult<&str, TeleinfoTuple>
         char(separator(mode)),
         anychar,
         char('\u{0d}'),
-    ))(input)?;
+    )
+        .parse(input)?;
     Ok((input, (tag, data, checksum, Some(date))))
 }
 
 fn parser_horodate_season(input: &str) -> IResult<&str, &str> {
-    alt((tag_no_case("h"), tag_no_case("e"), tag(" ")))(input)
+    alt((tag_no_case("h"), tag_no_case("e"), tag(" "))).parse(input)
 }
 
 fn parser_date_verifier(input: &str) -> IResult<&str, &str> {
@@ -100,11 +103,12 @@ fn parser_date_verifier(input: &str) -> IResult<&str, &str> {
 fn parser_horodate_date(input: &str) -> IResult<&str, &str> {
     verify(take(12usize), |s: &str| {
         parser_date_verifier(s).unwrap() == ("" as &str, s)
-    })(input)
+    })
+    .parse(input)
 }
 
 fn parser_horodate(input: &str) -> IResult<&str, TeleinfoDate> {
-    match tuple((parser_horodate_season, parser_horodate_date))(input) {
+    match (parser_horodate_season, parser_horodate_date).parse(input) {
         Err(e) => Err(e),
         Ok((r, (season, date))) => {
             let raw_value = format!("{}{}", season, date);
@@ -120,26 +124,28 @@ fn parser_horodate(input: &str) -> IResult<&str, TeleinfoDate> {
     }
 }
 
-pub fn parser_message(input: &str) -> IResult<&str, (Vec<TeleinfoTuple>, TeleinfoMode)> {
-    alt((parser_message_legacy, parser_message_standard))(input)
+pub fn parser_message(input: &str) -> IResult<&str, (Vec<TeleinfoTuple<'_>>, TeleinfoMode)> {
+    alt((parser_message_legacy, parser_message_standard)).parse(input)
 }
 
-pub fn parser_message_legacy(input: &str) -> IResult<&str, (Vec<TeleinfoTuple>, TeleinfoMode)> {
-    match many1(parser_dataset_legacy)(input) {
+pub fn parser_message_legacy(input: &str) -> IResult<&str, (Vec<TeleinfoTuple<'_>>, TeleinfoMode)> {
+    match many1(parser_dataset_legacy).parse(input) {
         Ok((r, v)) => Ok((r, (v, TeleinfoMode::Legacy))),
         Err(e) => Err(e),
     }
 }
 
-pub fn parser_message_standard(input: &str) -> IResult<&str, (Vec<TeleinfoTuple>, TeleinfoMode)> {
-    match many1(parser_dataset_standard)(input) {
+pub fn parser_message_standard(
+    input: &str,
+) -> IResult<&str, (Vec<TeleinfoTuple<'_>>, TeleinfoMode)> {
+    match many1(parser_dataset_standard).parse(input) {
         Ok((r, v)) => Ok((r, (v, TeleinfoMode::Standard))),
         Err(e) => Err(e),
     }
 }
 
 pub fn validate_message(mode: TeleinfoMode, message: Vec<TeleinfoTuple>) -> bool {
-    message.clone().iter().map(|m| validate(mode, m)).all(|x| x)
+    message.clone().iter().all(|m| validate(mode, m))
 }
 
 fn validate(mode: TeleinfoMode, values: &TeleinfoTuple) -> bool {
