@@ -294,15 +294,14 @@ fn get_value_from_teleinfovalue(value: Option<&TeleinfoValue>) -> Option<String>
 fn parsed_vector_to_values(lines: Vec<TeleinfoTuple>) -> HashMap<String, TeleinfoValue> {
     let mut values = HashMap::new();
     for line in lines {
-        match line {
-            (key, val, _, hd) => values.insert(
-                key.to_string(),
-                TeleinfoValue {
-                    value: val.to_string(),
-                    horodate: hd,
-                },
-            ),
-        };
+        let (key, val, _, hd) = line;
+        values.insert(
+            key.to_string(),
+            TeleinfoValue {
+                value: val.to_string(),
+                horodate: hd,
+            },
+        );
     }
     values
 }

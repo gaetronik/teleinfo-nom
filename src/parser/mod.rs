@@ -145,7 +145,7 @@ pub fn parser_message_standard(
 }
 
 pub fn validate_message(mode: TeleinfoMode, message: Vec<TeleinfoTuple>) -> bool {
-    message.clone().iter().map(|m| validate(mode, m)).all(|x| x)
+    message.clone().iter().all(|m| validate(mode, m))
 }
 
 fn validate(mode: TeleinfoMode, values: &TeleinfoTuple) -> bool {
