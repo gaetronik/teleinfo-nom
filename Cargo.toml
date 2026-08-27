@@ -15,4 +15,4 @@ travis-ci = { repository = "gaetronik/teleinfo-nom", branch = "master" }
 
 [dependencies]
 nom = "8"
-chrono = "0.4"
+jiff = { version = "0.2.35", default-features = false, features = ["alloc", "perf-inline", "std"] }
